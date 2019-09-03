@@ -84,7 +84,11 @@ Admin.Modules.register('display.datatables', () => {
             table.draw();
         });
 
+<<<<<<< HEAD
+        $("#filters-cancel").on('click', function () {
+=======
         $("[data-datatables-id="+$this.data("id")+"] #filters-cancel").on('click', function () {
+>>>>>>> owl/new
             let input = $(".display-filters td[data-index] input").val(null);
             input.trigger('change');
 
