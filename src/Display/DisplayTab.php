@@ -23,12 +23,13 @@ use SleepingOwl\Admin\Contracts\Display\TabInterface;
 use SleepingOwl\Admin\Contracts\Form\ElementsInterface;
 use SleepingOwl\Admin\Contracts\Display\DisplayInterface;
 use SleepingOwl\Admin\Contracts\Form\FormElementInterface;
+use SleepingOwl\Admin\Traits\FormElementsRecursiveIterator;
 use SleepingOwl\Admin\Contracts\ModelConfigurationInterface;
 use SleepingOwl\Admin\Exceptions\Display\DisplayTabException;
 
 class DisplayTab implements TabInterface, DisplayInterface, FormInterface
 {
-    use VisibleCondition, \SleepingOwl\Admin\Traits\Renderable, HtmlAttributes;
+    use VisibleCondition, \SleepingOwl\Admin\Traits\Renderable, HtmlAttributes, FormElementsRecursiveIterator;
 
     /**
      * @var string
@@ -59,6 +60,11 @@ class DisplayTab implements TabInterface, DisplayInterface, FormInterface
      * @var
      */
     protected $badge;
+
+    /**
+     * @var bool
+     */
+    protected $external_form = false;
 
     /**
      * @var string
@@ -163,6 +169,8 @@ class DisplayTab implements TabInterface, DisplayInterface, FormInterface
 
     /**
      * @return $this
+     * @throws \SleepingOwl\Admin\Exceptions\Display\DisplayTabException
+     * @throws \SleepingOwl\Admin\Exceptions\Form\FormElementException
      */
     public function addTabElement()
     {
@@ -312,6 +320,26 @@ class DisplayTab implements TabInterface, DisplayInterface, FormInterface
         }
 
         return $this;
+    }
+
+    /**
+     * @param bool $bool
+     *
+     * @return $this
+     */
+    public function setExternalForm($bool)
+    {
+        $this->external_form = $bool;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getExternalForm()
+    {
+        return $this->external_form;
     }
 
     /**
@@ -517,15 +545,16 @@ class DisplayTab implements TabInterface, DisplayInterface, FormInterface
 
     /**
      * @return array
+     * @throws \SleepingOwl\Admin\Exceptions\Display\DisplayTabException
      */
     public function toArray()
     {
         return [
-            'label'  => $this->getLabel(),
+            'label' => $this->getLabel(),
             'active' => $this->isActive(),
-            'name'   => $this->getName(),
-            'icon'   => $this->getIcon(),
-            'badge'  => $this->getBadge(),
+            'name' => $this->getName(),
+            'icon' => $this->getIcon(),
+            'badge' => $this->getBadge(),
             'arrayAttributes' => $this->getHtmlAttributes(),
             'attributes' => $this->htmlAttributesToString(),
         ];

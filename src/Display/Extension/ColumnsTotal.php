@@ -5,9 +5,9 @@ namespace SleepingOwl\Admin\Display\Extension;
 use Illuminate\Support\Collection;
 use SleepingOwl\Admin\Display\Element;
 use KodiComponents\Support\HtmlAttributes;
+use SleepingOwl\Admin\Traits\ElementViewTrait;
 use SleepingOwl\Admin\Contracts\Display\Placable;
 use SleepingOwl\Admin\Traits\ElementPlacementTrait;
-use SleepingOwl\Admin\Traits\ElementViewTrait;
 
 class ColumnsTotal extends Extension implements Placable
 {
@@ -24,6 +24,11 @@ class ColumnsTotal extends Extension implements Placable
     protected $placement = 'table.header';
 
     /**
+     * @var string
+     */
+    protected $tag = 'thead';
+
+    /**
      * @var Collection
      */
     protected $elements;
@@ -32,7 +37,6 @@ class ColumnsTotal extends Extension implements Placable
     {
         $this->elements = new Collection();
     }
-
 
     public function set(array $elements, $columnsNumber = 0)
     {
@@ -55,7 +59,7 @@ class ColumnsTotal extends Extension implements Placable
         return [
             'elements' => $this->elements,
             'attributes' => $this->htmlAttributesToString(),
-            'tag' => $this->getPlacement() == 'table.header' ? 'thead' : 'tfoot',
+            'tag' => $this->getTag(),
         ];
     }
 }

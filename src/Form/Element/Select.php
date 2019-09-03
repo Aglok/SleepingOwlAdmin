@@ -2,11 +2,13 @@
 
 namespace SleepingOwl\Admin\Form\Element;
 
+use Illuminate\Support\Arr;
 use Illuminate\Database\Eloquent\Model;
+use SleepingOwl\Admin\Traits\SelectOptionsFromModel;
 
 class Select extends NamedFormElement
 {
-    use \SleepingOwl\Admin\Traits\SelectOptionsFromModel;
+    use SelectOptionsFromModel;
 
     /**
      * @var array
@@ -40,9 +42,12 @@ class Select extends NamedFormElement
     protected $view = 'form.element.select';
 
     /**
-     * @param string $path
-     * @param string|null $label
-     * @param array|Model $options
+     * Select constructor.
+     * @param $path
+     * @param null $label
+     * @param array $options
+     * @throws \SleepingOwl\Admin\Exceptions\Form\Element\SelectException
+     * @throws \SleepingOwl\Admin\Exceptions\Form\FormElementException
      */
     public function __construct($path, $label = null, $options = [])
     {
@@ -66,7 +71,7 @@ class Select extends NamedFormElement
             );
         }
 
-        $options = array_except($this->options, $this->exclude);
+        $options = Arr::except($this->options, $this->exclude);
         if ($this->isSortable()) {
             asort($options, $this->getSortableFlags());
         }
@@ -180,6 +185,24 @@ class Select extends NamedFormElement
     }
 
     /**
+     * @return array
+     */
+    public function getExclude()
+    {
+        return $this->exclude;
+    }
+
+    /**
+     * @param array $keys
+     *
+     * @return $this
+     */
+    public function setExclude($keys)
+    {
+        return $this->exclude($keys);
+    }
+
+    /**
      * @param array $keys
      *
      * @return $this
@@ -212,12 +235,13 @@ class Select extends NamedFormElement
      */
     public function toArray()
     {
+        $this->setHtmlAttribute('id', ($this->getHtmlAttribute('id') ?: $this->getId()));
         $this->setHtmlAttributes([
-            'id'               => $this->getName(),
-            'size'             => 2,
+            'size' => 2,
             'data-select-type' => 'single',
-            'class'            => 'form-control',
         ]);
+
+        $this->setHtmlAttribute('class', 'form-control');
 
         if ($this->isReadonly()) {
             $this->setHtmlAttribute('disabled', 'disabled');
@@ -230,11 +254,13 @@ class Select extends NamedFormElement
             $options = collect($options)->prepend(['id' => null, 'text' => trans('sleeping_owl::lang.select.nothing')]);
         }
 
-        return ['attributes' => $this->htmlAttributesToString()] + parent::toArray() + [
-                'options'  => $options,
-                'limit'    => $this->getLimit(),
+        $return = ['attributes' => $this->htmlAttributesToString()] + parent::toArray() + [
+                'options' => $options,
+                'limit' => $this->getLimit(),
                 'nullable' => $this->isNullable(),
             ];
+
+        return $return;
     }
 
     /**
