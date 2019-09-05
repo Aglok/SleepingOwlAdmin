@@ -4,6 +4,7 @@ namespace SleepingOwl\Admin\Display;
 
 use Exception;
 use SleepingOwl\Admin\Traits\Assets;
+use SleepingOwl\Admin\Form\FormElements;
 use SleepingOwl\Admin\Traits\Renderable;
 use KodiComponents\Support\HtmlAttributes;
 use SleepingOwl\Admin\Display\Extension\Apply;
@@ -11,6 +12,7 @@ use SleepingOwl\Admin\Display\Extension\Links;
 use SleepingOwl\Admin\Display\Extension\Scopes;
 use SleepingOwl\Admin\Display\Extension\Actions;
 use SleepingOwl\Admin\Display\Extension\Filters;
+use SleepingOwl\Admin\Display\Extension\ActionsForm;
 use SleepingOwl\Admin\Contracts\Display\DisplayInterface;
 use SleepingOwl\Admin\Contracts\ModelConfigurationInterface;
 use SleepingOwl\Admin\Contracts\Repositories\RepositoryInterface;
@@ -22,7 +24,10 @@ use SleepingOwl\Admin\Contracts\Display\Extension\FilterInterface;
  * Class Display.
  *
  * @method Actions getActions()
- * @method $this setActions(ActionInterface $action, ...$actions)
+ * @method $this setActions(ActionInterface|array $action, ...$actions)
+ *
+ * @method ActionsForm getActionsForm()
+ * @method $this setActionsForm(ActionInterface|array|FormElements $action, ...$actions)
  *
  * @method Filters getFilters()
  * @method $this setFilters(FilterInterface $filter, ...$filters)
@@ -80,6 +85,7 @@ abstract class Display implements DisplayInterface
         $this->extensions = new ExtensionCollection();
 
         $this->extend('actions', new Actions());
+        $this->extend('actions_form', new ActionsForm());
         $this->extend('filters', new Filters());
         $this->extend('apply', new Apply());
         $this->extend('scopes', new Scopes());
