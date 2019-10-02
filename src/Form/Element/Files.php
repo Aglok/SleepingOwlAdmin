@@ -4,72 +4,74 @@ namespace SleepingOwl\Admin\Form\Element;
 
 use Closure;
 use Illuminate\Support\Arr;
-use Illuminate\Routing\Router;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use KodiComponents\Support\Upload;
-use SleepingOwl\Admin\Contracts\WithRoutesInterface;
+use Illuminate\Support\Facades\File;
 
-class File extends NamedFormElement implements WithRoutesInterface
+class Files extends Images
 {
-    /**
-     * @var string
-     */
-    protected static $route = 'file';
+    protected $uploadValidationRules = ['required'];
+
+    protected $view = 'form.element.files';
+
+    protected $files_group_class = null;
+
+    protected $show_title = true;
+
+    protected $show_description = true;
+
+    protected $title_required = false;
+
+    protected $description_required = false;
 
     /**
-     * @var \Closure
+     * @param bool $bool
+     *
+     * @return $this
      */
-    protected $saveCallback;
-
-    /**
-     * @param Router $router
-     */
-    public static function registerRoutes(Router $router)
+    public function showTitle($bool)
     {
-        $routeName = 'admin.form.element.'.static::$route;
+        $this->show_title = $bool;
 
-        if (! $router->has($routeName)) {
-            $router->post('{adminModel}/'.static::$route.'/{field}/{id?}', [
-                'as' => $routeName,
-                'uses' => 'SleepingOwl\Admin\Http\Controllers\UploadController@fromField',
-            ]);
-        }
+        return $this;
     }
 
     /**
-     * @var string
+     * @param bool $bool
+     *
+     * @return $this
      */
-    protected $driver = 'file';
+    public function showDescription($bool)
+    {
+        $this->show_description = $bool;
+
+        return $this;
+    }
 
     /**
-     * @var array
+     * @param bool $bool
+     *
+     * @return $this
      */
-    protected $driverOptions = [];
+    public function setTitleRequired($bool)
+    {
+        $this->title_required = $bool;
+
+        return $this;
+    }
 
     /**
-     * @var Closure
+     * @param bool $bool
+     *
+     * @return $this
      */
-    protected $uploadPath;
+    public function setDescriptionRequired($bool)
+    {
+        $this->description_required = $bool;
 
-    /**
-     * @var Closure
-     */
-    protected $uploadFileName;
-
-    /**
-     * @var array
-     */
-    protected $uploadSettings = [];
-
-    /**
-     * @var array
-     */
-    protected $uploadValidationRules = ['required', 'file'];
-
-    /**
-     * @var string
-     */
-    protected $view = 'form.element.file';
+        return $this;
+    }
 
     /**
      * @return array
@@ -179,7 +181,7 @@ class File extends NamedFormElement implements WithRoutesInterface
     public function getUploadSettings()
     {
         if (empty($this->uploadSettings) && in_array(Upload::class, class_uses($this->getModel()))) {
-            return (array) Arr::get($this->getModel()->getUploadSettings(), $this->getPath());
+            return (array) array_get($this->getModel()->getUploadSettings(), $this->getPath());
         }
 
         return $this->uploadSettings;
@@ -314,11 +316,110 @@ class File extends NamedFormElement implements WithRoutesInterface
     }
 
     /**
+     * @return array|mixed|string
+     */
+    public function getValueFromModel()
+    {
+        $value = $this->model->{$this->name};
+        $return = isset($value) && mb_strlen($value) >= 5 ? json_decode($value, true) : [];
+
+        return $return;
+    }
+
+    /**
+     * @param string $mode
+     *
+     * @return $this
+     */
+    public function setListMode($mode)
+    {
+        if ($mode == 'vertical') {
+            $this->files_group_class = 'files-group-vertical';
+        } elseif ($mode == 'horizontal') {
+            $this->files_group_class = null;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function setVertical()
+    {
+        $this->setListMode('vertical');
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function setHorizontal()
+    {
+        $this->setListMode('horizontal');
+
+        return $this;
+    }
+
+    /**
+     * @param Request $request
+     */
+    public function save(Request $request)
+    {
+        $name = $this->getName();
+        $value = Arr::get($request->all(), $this->getNameKey());
+
+        if (is_array($value_array = json_decode($value, true)) && count($value_array)) {
+            foreach ($value_array as $v => $array) {
+                $file = $array['url'];
+                if ($file && File::exists($file)) {
+                    if (! isset($array['filesize'])) {
+                        $array['filesize'] = File::size($file);
+                    }
+                    if (! isset($array['ext'])) {
+                        $array['ext'] = File::extension($file);
+                    }
+                    $mime = File::mimeType($file);
+                    if (! isset($array['mime'])) {
+                        $array['mime'] = $mime;
+                    }
+                    if (mb_strpos($mime, '/')) {
+                        [$mime1, $mime2] = explode('/', $mime);
+                        if (! isset($array['mime_base'])) {
+                            $array['mime_base'] = $mime1;
+                        }
+                        if (! isset($array['mime_detail'])) {
+                            $array['mime_detail'] = $mime2;
+                        }
+                    }
+                }
+                $value_array[$v] = $array;
+            }
+            $value = json_encode($value_array);
+        }
+
+        $request->merge([$name => $value]);
+
+        $this->setModelAttribute(
+            $this->getValueFromRequest($request)
+        );
+    }
+
+    /**
      * @return array
      */
     public function toArray()
     {
         $return = parent::toArray();
+
+        $return = array_merge($return, [
+            'files_group_class' => $this->files_group_class,
+            'show_title' => $this->show_title,
+            'show_description' => $this->show_description,
+            'title_required' => $this->title_required,
+            'description_required' => $this->description_required,
+        ]);
 
         return $return;
     }
